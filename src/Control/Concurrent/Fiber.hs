@@ -31,11 +31,15 @@ infixr 0 !>
 foreign import prim "eta.fibers.PrimOps.yieldFiber"
    yieldFiber# :: Int# -> Any -> State# s -> State# s
 
-yieldFiber k= IO $ \s -> case yieldFiber# 0# (unsafeCoerce# k) s of s' -> (# s', () #)
 
 yield= callCC $ \k -> liftIO $ yieldFiber (runFiber $ k ())
+    where 
+    yieldFiber k= IO $ \s -> case yieldFiber# 0# (unsafeCoerce# k) s of s' -> (# s', () #)
 
-block= yield  --to compile MVar.hs
+block= IO $ \s -> case yieldFiber# 1# undefined s of s' -> (# s', () #)
+-- block=  callCC $ \k -> liftIO $ blockFiber (runFiber $ k ()) 
+--     where
+--     blockFiber k= IO $ \s -> case yieldFiber# 1# (unsafeCoerce# k) s of s' -> (# s', () #)
 
 data FiberId= FiberId ThreadId# 
 
@@ -74,7 +78,8 @@ type Dyn= ()
 
 data Fiber  a = Fiber { runFiberC :: (Dyn -> IO a) -> IO a }
 
-unFiber= runFiberC
+unFiber= unIO . runFiber
+ where unIO (IO x)= x
 
 
 instance   Monad Fiber  where

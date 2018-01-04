@@ -5,26 +5,28 @@ where
 
 import GHC.Base
 import Control.Concurrent.Fiber
+import Control.Monad.IO.Class
 import GHC.MVar (MVar(..))
 
+--unIO (IO x)= x
 takeMVar :: MVar a -> Fiber a
-takeMVar (MVar m) = go
-  where go = Fiber $ \s ->
+takeMVar (MVar m) = liftIO  go
+  where go = IO  $ \s ->
                case tryTakeMVar# m s of
                  (# s', 0#, _ #) ->
                    case addMVarListener# m s' of
-                     s'' -> unFiber (block >> go) s''
+                     s'' -> unIO (block >> go) s''
                  (# s', _,  a #) ->
                    case awakenMVarListeners# m s' of
                      s'' -> (# s'', a  #)
 
 putMVar :: MVar a -> a -> Fiber ()
-putMVar (MVar m) x = go
-  where go = Fiber $ \s ->
+putMVar (MVar m) x = liftIO  go
+  where go = IO  $ \s ->
                case tryPutMVar# m x s of
                  (# s', 0# #) ->
                    case addMVarListener# m s' of
-                     s'' -> unFiber (block >> go) s''
+                     s'' -> unIO (block >> go) s''
                  (# s', _  #) ->
                    case awakenMVarListeners# m s' of
                      s'' -> (# s'', () #)
