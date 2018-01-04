@@ -36,10 +36,10 @@ yield= callCC $ \k -> liftIO $ yieldFiber (runFiber $ k ())
     where 
     yieldFiber k= IO $ \s -> case yieldFiber# 0# (unsafeCoerce# k) s of s' -> (# s', () #)
 
-block= IO $ \s -> case yieldFiber# 1# undefined s of s' -> (# s', () #)
--- block=  callCC $ \k -> liftIO $ blockFiber (runFiber $ k ()) 
---     where
---     blockFiber k= IO $ \s -> case yieldFiber# 1# (unsafeCoerce# k) s of s' -> (# s', () #)
+--block= IO $ \s -> case yieldFiber# 1# undefined s of s' -> (# s', () #)
+block=  callCC $ \k -> liftIO $ blockFiber (runFiber $ k ()) 
+     where
+     blockFiber k= IO $ \s -> case yieldFiber# 1# (unsafeCoerce# k) s of s' -> (# s', () #)
 
 data FiberId= FiberId ThreadId# 
 
