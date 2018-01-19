@@ -32,19 +32,19 @@ library
                        UnboxedTuples
                        UnliftedFFITypes
 
--- executable fibers
---   default-extensions:  InstanceSigs
---                        ScopedTypeVariables
---                        GHCForeignImportPrim
---                        MagicHash
---                        UnboxedTuples
---                        UnliftedFFITypes
---   ghc-options:         -ddump-stg -ddump-to-file
---   main-is:             Fiber.hs
---   -- other-modules:       
---   other-extensions:    MultiParamTypeClasses, ExistentialQuantification, ScopedTypeVariables, FlexibleInstances, FlexibleContexts, UndecidableInstances
---   build-depends:       base >=4.8 && <4.9, transformers
---   hs-source-dirs:      src
---   java-sources:        prim/PrimOps.java
+executable fibers
+  default-extensions:  InstanceSigs
+                       ScopedTypeVariables
+                       GHCForeignImportPrim
+                       MagicHash
+                       UnboxedTuples
+                       UnliftedFFITypes
+  ghc-options:         -ddump-stg -ddump-to-file
+  main-is:             testmvar.hs
+  -- other-modules:       
+  other-extensions:    MultiParamTypeClasses, ExistentialQuantification, ScopedTypeVariables, FlexibleInstances, FlexibleContexts, UndecidableInstances
+  build-depends:       base >=4.8 && <4.9, transformers, eta-fibers-new, timeit
+  hs-source-dirs:      src,examples
+  java-sources:        prim/PrimOps.java
 
---   default-language:    Haskell2010
+  default-language:    Haskell2010

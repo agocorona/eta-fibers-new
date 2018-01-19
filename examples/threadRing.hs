@@ -1,4 +1,5 @@
 import Control.Monad
+import Control.Applicative
 import Control.Concurrent.MVar hiding (takeMVar, putMVar)
 import qualified Control.Concurrent.MVar as MVar
 import Control.Concurrent.Fiber
@@ -43,10 +44,12 @@ threadring ring msgs = do
 foreign export java "@static eta.threadring.ThreadRing.start"
   threadring :: Int -> Int -> IO JIntArray
 
+
 main :: IO ()
-main = for 10  $ timeIt $ do
+main = timeIt $ do
   msgs <- fmap (read . head) getArgs
-  threadring ring msgs
+  r <- threadring ring msgs
+  liftIO $ putStr "Result: " >> print r
   return ()
 
 for 0 _= return () 

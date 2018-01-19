@@ -1,8 +1,13 @@
---import Control.Concurrent.Fiber
+import Control.Concurrent.Fiber
 import Data.IORef
 import Control.Monad.IO.Class
+import Control.Applicative
+import Data.Monoid
+import Control.Concurrent
 
-main=  do
+
+
+main= do
    r <- liftIO $ newIORef 0
    sum  r 1000000
  where

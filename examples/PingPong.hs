@@ -23,7 +23,7 @@ main = for 10 $ timeIt $ do
   -- Start the chain from the main thread!
   MVar.putMVar pingChan ()
   -- Wait 1 second
-  threadDelay 1000000
+  threadDelay 10000000
   return ()
   where 
   for 0 x= return () 

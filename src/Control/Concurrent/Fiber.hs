@@ -32,12 +32,12 @@ foreign import prim "eta.fibers.PrimOps.yieldFiber"
    yieldFiber# :: Int# -> Any -> State# s -> State# s
 
 
-yield= callCC $ \k -> liftIO $ yieldFiber (runFiber $ k ())
+yield= callCC $ \k -> liftIO $ yieldFiber (trampolineIO $ runFiber $ k ())
     where 
     yieldFiber k= IO $ \s -> case yieldFiber# 0# (unsafeCoerce# k) s of s' -> (# s', () #)
 
 --block= IO $ \s -> case yieldFiber# 1# undefined s of s' -> (# s', () #)
-block=  callCC $ \k -> liftIO $ blockFiber (runFiber $ k ()) 
+block=  callCC $ \k -> liftIO $ blockFiber (trampolineIO $ runFiber $ k ()) 
      where
      blockFiber k= IO $ \s -> case yieldFiber# 1# (unsafeCoerce# k) s of s' -> (# s', () #)
 
@@ -140,13 +140,14 @@ instance Exception Empty
 
 instance Alternative Fiber where
     empty= liftIO $ throw  Empty 
-    f <|>  g= callCC $ \k -> do
-           -- liftIO  (runFiber  f `catch` \Empty -> runFiber (g >>= k >> empty)) >>= k
+    f <|>  g= callCC $ \k -> do -- liftIO  $ runFiber  (f >>=k)  `catch` \Empty -> runFiber  (g >>=k) 
+            
           
             r <- liftIO $ newIORef False
             let io  f cont= runFiber  (f >>= cont' ) 
-                    where cont' x= do liftIO $ writeIORef r True ; cont x
-            liftIO $ io f k `catch` \(Empty) -> do
+                    where cont' x= do liftIO $ (writeIORef r True) !> "write" ; cont x
+            liftIO $ do
+                 io f k `catch` \(Empty) -> do
                     c <- liftIO $ readIORef r 
                     when c $ throw Empty 
                     io g k      
@@ -157,9 +158,6 @@ instance Alternative Fiber where
     --     x <-  liftIO $ runFiber f `catch` (\Empty -> (runFiber g) !> "RUNFIBERG" )
     --     k x !> "continuation"
               
-     
-
-
 
 runFiber :: Fiber a -> IO a 
 runFiber x= runFiberC x (return . ety id )
@@ -184,7 +182,6 @@ async io= callCC $ \ret -> do
             empty   !> "async empty"
 
 waitEvents :: IO a -> Fiber a
---waitEvents :: IO a -> Fiber a (StateIO) a
 waitEvents io= callCC $ \ret -> do
     loop ret  
     where
@@ -327,6 +324,7 @@ keep :: Fiber () -> IO ()
 keep mx=   do
     forkFiber $ liftIO $ (runFiber  mx)  `catch` \Empty -> return ()
     takeMVar mexit     
+
 
 
 
