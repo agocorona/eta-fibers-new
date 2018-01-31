@@ -32,7 +32,7 @@ library
                        UnboxedTuples
                        UnliftedFFITypes
 
-executable fibers
+executable threadRing
   default-extensions:  InstanceSigs
                        ScopedTypeVariables
                        GHCForeignImportPrim
@@ -40,7 +40,7 @@ executable fibers
                        UnboxedTuples
                        UnliftedFFITypes
   ghc-options:         -ddump-stg -ddump-to-file
-  main-is:             testmvar.hs
+  main-is:             threadRing.hs
   -- other-modules:       
   other-extensions:    MultiParamTypeClasses, ExistentialQuantification, ScopedTypeVariables, FlexibleInstances, FlexibleContexts, UndecidableInstances
   build-depends:       base >=4.8 && <4.9, transformers, eta-fibers-new, timeit

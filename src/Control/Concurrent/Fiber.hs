@@ -31,25 +31,21 @@ infixr 0 !>
 foreign import prim "eta.fibers.PrimOps.yieldFiber"
    yieldFiber# :: Int# -> Any -> State# s -> State# s
 
-
-yield= callCC $ \k -> liftIO $ yieldFiber (trampolineIO $ runFiber $ k ())
+yield= callCC $ \k ->  liftIO $ yieldFiber (runFiber $ k ())
     where 
     yieldFiber k= IO $ \s -> case yieldFiber# 0# (unsafeCoerce# k) s of s' -> (# s', () #)
 
---block= IO $ \s -> case yieldFiber# 1# undefined s of s' -> (# s', () #)
-block=  callCC $ \k -> liftIO $ blockFiber (trampolineIO $ runFiber $ k ()) 
+block=  callCC $ \k -> liftIO $ blockFiber (runFiber $ k ()) 
      where
      blockFiber k= IO $ \s -> case yieldFiber# 1# (unsafeCoerce# k) s of s' -> (# s', () #)
 
 data FiberId= FiberId ThreadId# 
 
 forkFiber :: MonadIO m => Fiber () -> m FiberId
---forkFiber f = liftIO $ trampolineIO $ IO $ \s -> case fork# (runFiber f) s of (# s', tid #) -> (# s', FiberId tid #)
-forkFiber f = liftIO $ IO $ \s -> case fork# (trampolineIO $ runFiber f) s of (# s', tid #) -> (# s', FiberId tid #)
+forkFiber f = liftIO $ IO $ \s -> case fork# (runFiber f) s of (# s', tid #) -> (# s', FiberId tid #)
 
 
 trampolineIO :: IO a -> IO a
---trampolineIO (IO m) = IO $ \s -> case (unsafeCoerce# (trampoline# (unsafeCoerce# (m s)))) of (# s', a #) -> a
 trampolineIO (IO m) = IO $ \s -> case trampoline# (unsafeCoerce# (m s)) of (# a #) -> (# freshStateToken# a, unsafeCoerce# a #)
 
 foreign import prim "eta.runtime.stg.Stg.trampoline"
@@ -58,11 +54,12 @@ foreign import prim "eta.runtime.stg.Stg.trampoline"
 #else
 forkFiber f = liftIO  $ forkIO $ runFiber f `catch` \Empty -> return ()
 yield= return()
+trampolineIO= id
 #endif
 
 -- Type coercion is necessary because continuations can only be modeled fully within Indexed monads. 
 -- See paper P. Wadler "Monads and composable continuations" 
--- The symtom of that problem in the typical continaution monad is an extra parameter r that complicates reasoning
+-- The symtom of that problem in the typical continuation monad is an extra parameter r that complicates reasoning
 -- This monad eliminates the extra parameter by coercing types since, by construction, the contination parameter is of the
 --  type of the result of the first term of the bind.
 ety :: a -> b 
@@ -160,7 +157,7 @@ instance Alternative Fiber where
               
 
 runFiber :: Fiber a -> IO a 
-runFiber x= runFiberC x (return . ety id )
+runFiber x= trampolineIO $ runFiberC x (return . ety id )
 
 inputLoop= getLine >>= \l -> atomically (writeTVar mvline l)  >> inputLoop
 

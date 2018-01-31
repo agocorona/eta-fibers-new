@@ -9,7 +9,7 @@ import GHC.Conc.Sync hiding (yield)
 import GHC.Conc.IO
 import Control.Monad.IO.Class
 
-main= runFiber$ do 
+main=  runFiber$ do 
   r   <-  liftIO newEmptyMVar
 
   loop r

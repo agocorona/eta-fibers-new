@@ -1,5 +1,4 @@
 import Control.Monad
-import Control.Applicative
 import Control.Concurrent.MVar hiding (takeMVar, putMVar)
 import qualified Control.Concurrent.MVar as MVar
 import Control.Concurrent.Fiber
@@ -9,7 +8,7 @@ import GHC.Conc.Sync hiding (yield)
 import GHC.Conc.IO
 import Java
 
-import System.TimeIt
+import Control.Monad.IO.Class
 
 ring = 503
 
@@ -24,6 +23,7 @@ thread ret i l r = go
   where go = do
           m <- takeMVar l
           putMVar r $! m - 1
+          liftIO $ putStr "put" >> print m
           if (m < 1)
           then putMVar ret m
           else go
@@ -44,13 +44,8 @@ threadring ring msgs = do
 foreign export java "@static eta.threadring.ThreadRing.start"
   threadring :: Int -> Int -> IO JIntArray
 
-
 main :: IO ()
-main = timeIt $ do
+main = do
   msgs <- fmap (read . head) getArgs
-  r <- threadring ring msgs
-  liftIO $ putStr "Result: " >> print r
+  threadring ring msgs
   return ()
-
-for 0 _= return () 
-for n x= x >> for (n -1) x
