@@ -48,8 +48,8 @@ forkFiber f = liftIO $ IO $ \s -> case fork# (runFiber f) s of (# s', tid #) -> 
 trampolineIO :: IO a -> IO a
 trampolineIO (IO m) = IO $ \s -> case trampoline# (unsafeCoerce# (m s)) of (# a #) -> (# freshStateToken# a, unsafeCoerce# a #)
 
-foreign import prim "eta.runtime.stg.Stg.trampoline"
-    trampoline# :: Any -> (# Any #)
+--foreign import prim "eta.runtime.stg.Stg.trampoline"
+--    trampoline# :: Any -> (# Any #)
 
 #else
 forkFiber f = liftIO  $ forkIO $ runFiber f `catch` \Empty -> return ()
@@ -100,8 +100,11 @@ callCC f = Fiber $ \ c -> runFiberC (f (\ x -> Fiber $ \ _ -> ety $ c $ tdyn x))
 instance Functor Fiber where
     fmap f m = Fiber $ \c -> ety $ runFiberC m $ \ x->   ety c $ f $ fdyn x
                  
+                 
+instance Semigroup a => Semigroup (Fiber a) where
+    (<>) x y = (<>) <$> x <*> y
+
 instance Monoid a => Monoid (Fiber a) where
-    mappend x y = mappend <$> x <*> y
     mempty      = return mempty
 
 instance Applicative Fiber  where
@@ -158,6 +161,7 @@ instance Alternative Fiber where
 
 runFiber :: Fiber a -> IO a 
 runFiber x= trampolineIO $ runFiberC x (return . ety id )
+
 
 inputLoop= getLine >>= \l -> atomically (writeTVar mvline l)  >> inputLoop
 
